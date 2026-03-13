@@ -1,0 +1,29 @@
+{
+  "entities": {
+    "BarterItem": {
+      "title": "BarterItem",
+      "description": "An item listed for barter trade",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "estimatedValue": { "type": "number" },
+        "city": { "type": "string" },
+        "pincode": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "category", "images", "estimatedValue", "city", "userId", "userName", "userEmail", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/barter_items/{itemId}": {
+      "schema": "BarterItem",
+      "description": "Collection of barter items"
+    }
+  }
+}

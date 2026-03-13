@@ -1,0 +1,8 @@
+{
+  "name": "BharatBarter",
+  "description": "A professional C2C barter trade platform for India - pure swap, no money involved.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}
