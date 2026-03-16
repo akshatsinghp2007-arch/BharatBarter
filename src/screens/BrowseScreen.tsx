@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Filter, SlidersHorizontal } from 'lucide-react';
-import { db } from '../firebase';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { BarterItem, Language, Category } from '../types';
 import { TRANSLATIONS, CATEGORIES } from '../constants';
 import ItemCard from '../components/ItemCard';
-import { handleFirestoreError, OperationType } from '../utils/firestoreError';
 
 interface BrowseScreenProps {
   lang: Language;
@@ -21,16 +18,27 @@ export default function BrowseScreen({ lang, darkMode, onItemClick }: BrowseScre
   const [selectedCategory, setSelectedCategory] = useState<Category | 'All'>('All');
   const [selectedCity, setSelectedCity] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'barter_items'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const itemList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as BarterItem[];
-      setItems(itemList);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'barter_items');
-    });
-    return () => unsubscribe();
+    const fetchItems = async () => {
+      try {
+        const response = await fetch('/api/items');
+        if (response.ok) {
+          const data = await response.json();
+          setItems(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch items:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchItems();
+    // Optional: Polling for real-time feel
+    const interval = setInterval(fetchItems, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const cities = ['All', ...new Set(items.map(item => item.city))];

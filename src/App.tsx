@@ -1,12 +1,7 @@
 import React, { useState, useEffect, Component, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { 
-  doc, 
-  getDocFromServer
-} from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2 } from 'lucide-react';
-import { auth, db } from './firebase';
+import { auth } from './firebase';
 import { BarterItem, Language, NavTab } from './types';
 import { TRANSLATIONS } from './constants';
 import Navbar from './components/Navbar';
@@ -18,17 +13,6 @@ import BrowseScreen from './screens/BrowseScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ItemDetailScreen from './screens/ItemDetailScreen';
 import TradeModal from './components/TradeModal';
-
-import { handleFirestoreError, OperationType } from './utils/firestoreError';
-
-interface ErrorBoundaryProps {
-  children: ReactNode;
-}
-
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: any;
-}
 
 class ErrorBoundary extends Component<any, any> {
   state = { hasError: false, error: null };
@@ -63,7 +47,7 @@ class ErrorBoundary extends Component<any, any> {
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const [lang, setLang] = useState<Language>('en');
@@ -76,23 +60,21 @@ export default function App() {
   const t = TRANSLATIONS[lang];
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
       setUser(user);
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  // Test connection as required by guidelines
+  // Test connection as required by guidelines (Mocked for SQLite)
   useEffect(() => {
     async function testConnection() {
       try {
-        await getDocFromServer(doc(db, 'test', 'connection'));
+        const res = await fetch('/api/health');
+        if (!res.ok) console.error("Local server connection failed.");
       } catch (error) {
-        // Only log if it's a real connection error, not just permission denied
-        if(error instanceof Error && error.message.includes('the client is offline')) {
-          console.error("Please check your Firebase configuration.");
-        }
+        console.error("Please check your local server configuration.");
       }
     }
     testConnection();

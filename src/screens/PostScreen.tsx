@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Send, Loader2 } from 'lucide-react';
-import { db, auth } from '../firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { auth } from '../firebase';
 import { Language, Category, NavTab } from '../types';
 import { TRANSLATIONS, CATEGORIES } from '../constants';
 import ImageUpload from '../components/ImageUpload';
-import { handleFirestoreError, OperationType } from '../utils/firestoreError';
 
 interface PostScreenProps {
   lang: Language;
@@ -37,19 +35,29 @@ export default function PostScreen({ lang, darkMode, setActiveTab }: PostScreenP
 
     setLoading(true);
     try {
-      await addDoc(collection(db, 'barter_items'), {
-        ...formData,
-        estimatedValue: Number(formData.estimatedValue),
-        images,
-        userId: auth.currentUser.uid,
-        userName: auth.currentUser.displayName || 'Anonymous',
-        userEmail: auth.currentUser.email || '',
-        createdAt: new Date().toISOString(),
+      const response = await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          estimatedValue: Number(formData.estimatedValue),
+          images,
+          userId: auth.currentUser.uid,
+          userName: auth.currentUser.displayName || 'Anonymous',
+          userEmail: auth.currentUser.email || '',
+          createdAt: new Date().toISOString(),
+        }),
       });
-      alert('Item posted successfully!');
-      setActiveTab('browse');
+
+      if (response.ok) {
+        alert('Item posted successfully!');
+        setActiveTab('browse');
+      } else {
+        throw new Error('Failed to post item');
+      }
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'barter_items');
+      console.error('Post error:', error);
+      alert('Failed to post item. Please try again.');
     } finally {
       setLoading(false);
     }

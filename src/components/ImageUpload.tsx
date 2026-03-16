@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Camera, X, Loader2 } from 'lucide-react';
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 interface ImageUploadProps {
   images: string[];
@@ -27,15 +25,20 @@ export default function ImageUpload({ images, setImages, darkMode }: ImageUpload
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const storageRef = ref(storage, `barter_items/${Date.now()}_${file.name}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        newImages.push(url);
+        // Convert to base64
+        const reader = new FileReader();
+        const promise = new Promise<string>((resolve, reject) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(file);
+        const base64 = await promise;
+        newImages.push(base64);
       }
       setImages(newImages);
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload image');
+      alert('Failed to process image');
     } finally {
       setUploading(false);
     }

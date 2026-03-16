@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Package, Settings, LogOut } from 'lucide-react';
-import { db, auth, logout } from '../firebase';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { auth, logout } from '../firebase';
 import { BarterItem, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import ItemCard from '../components/ItemCard';
-import { handleFirestoreError, OperationType } from '../utils/firestoreError';
 
 interface ProfileScreenProps {
   lang: Language;
@@ -21,18 +19,21 @@ export default function ProfileScreen({ lang, darkMode, onItemClick }: ProfileSc
 
   useEffect(() => {
     if (!user) return;
-    const q = query(
-      collection(db, 'barter_items'), 
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const itemList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as BarterItem[];
-      setItems(itemList);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'barter_items');
-    });
-    return () => unsubscribe();
+    const fetchMyItems = async () => {
+      try {
+        const response = await fetch('/api/items');
+        if (response.ok) {
+          const allItems = await response.json();
+          setItems(allItems.filter((item: BarterItem) => item.userId === user.uid));
+        }
+      } catch (error) {
+        console.error('Failed to fetch my items:', error);
+      }
+    };
+
+    fetchMyItems();
+    const interval = setInterval(fetchMyItems, 5000);
+    return () => clearInterval(interval);
   }, [user]);
 
   if (!user) return null;
